@@ -5,139 +5,46 @@
     <title>W/L Counter</title>
     <script src="https://cdn.jsdelivr.net/npm/tmi.js@latest"></script>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: transparent;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-            color: white;
-            font-size: 72px;
-            font-weight: bold;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            text-shadow: none;
-        }
-        #counter {
-            background: transparent;
-            padding: 0;
-            border: none;
-            box-shadow: none;
-        }
-        #debug {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
-            color: lime;
-            font-size: 16px;
-            padding: 10px;
-            max-width: 80%;
-            max-height: 300px;
-            overflow: auto;
-            white-space: pre-wrap;
-            font-family: monospace;
-        }
+        body { margin:0; padding:0; background:transparent; font-family:Arial,sans-serif; color:white; font-size:72px; font-weight:bold; display:flex; justify-content:center; align-items:center; height:100vh; }
+        #counter { background:transparent; }
     </style>
 </head>
 <body>
     <div id="counter">W/L-0-0</div>
-    <div id="debug">Debug log loading...</div>
 
     <script>
         let wins = 0;
         let losses = 0;
-        const debugDiv = document.getElementById('debug');
-        function log(msg) {
-            debugDiv.innerHTML += msg + '<br>';
-            debugDiv.scrollTop = debugDiv.scrollHeight;
-            console.log(msg); // Also to browser console
-        }
-
-        function updateDisplay() {
-            document.getElementById('counter').innerText = `W/L-${wins}-${losses}`;
-            log('Updated display: W/L-' + wins + '-' + losses);
-        }
-
-        log('Script starting...');
+        const counter = document.getElementById('counter');
 
         const client = new tmi.Client({
-            options: { debug: true },
-            connection: {
-                reconnect: true,
-                secure: true
+            options: { debug: false },
+            connection: { reconnect: true, secure: true },
+            identity: {
+                username: 'neosredthong',          // e.g. skraitbot (lowercase)
+                password: 'oauth:1svzbwjs35uw7ftpvwplg1pv2m1a81' // from twitchtokengenerator.com (add 'oauth:' prefix)
             },
-            channels: ['skrait0']  // CHANGE TO 'neokipz' when ready
+            channels: ['skrait0']  // change to 'neokipz' for them
         });
 
-        client.connect()
-            .then(() => log('Connect promise resolved'))
-            .catch(err => log('Connect error: ' + err));
-
-        client.on('connected', (addr, port) => {
-            log('Connected anonymously to ' + addr + ':' + port + '!');
-        });
-
-        client.on('disconnected', reason => log('Disconnected: ' + reason));
-
-        client.on('join', (channel, username, self) => {
-            if (self) log('Joined channel: ' + channel);
-        });
+        client.connect();
 
         client.on('message', (channel, tags, message, self) => {
             if (self) return;
-            log('Received message from ' + tags.username + ': "' + message + '"');
-            log('Badges - Broadcaster: ' + !!tags.badges?.broadcaster + ', Mod: ' + !!tags.badges?.moderator);
-
             message = message.trim().toLowerCase();
 
-            const isBroadcaster = !!tags.badges?.broadcaster;
-            const isMod = !!tags.badges?.moderator;
-
-            if (!isBroadcaster && !isMod) {
-                log('Ignored (not broadcaster/mod)');
-                return;
-            }
+            if (!tags.badges?.broadcaster && !tags.badges?.moderator) return;
 
             if (message.startsWith('!w')) {
                 const arg = message.slice(2).trim();
-                if (arg === '') {
-                    wins += 1;
-                    log('Increment win');
-                } else {
-                    const num = parseInt(arg, 10);
-                    if (!isNaN(num) && num >= 0) {
-                        wins = num;
-                        log('Set wins to ' + num);
-                    } else {
-                        log('Invalid win number');
-                    }
-                }
-                updateDisplay();
+                wins = arg ? parseInt(arg, 10) || wins : wins + 1;
+                counter.innerText = `W/L-${wins}-${losses}`;
             } else if (message.startsWith('!l')) {
                 const arg = message.slice(2).trim();
-                if (arg === '') {
-                    losses += 1;
-                    log('Increment loss');
-                } else {
-                    const num = parseInt(arg, 10);
-                    if (!isNaN(num) && num >= 0) {
-                        losses = num;
-                        log('Set losses to ' + num);
-                    } else {
-                        log('Invalid loss number');
-                    }
-                }
-                updateDisplay();
-            } else {
-                log('Not a command');
+                losses = arg ? parseInt(arg, 10) || losses : losses + 1;
+                counter.innerText = `W/L-${wins}-${losses}`;
             }
         });
-
-        log('Listener set up');
-        updateDisplay();
     </script>
 </body>
 </html>
