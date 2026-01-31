@@ -1,50 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>W/L Counter</title>
-    <script src="https://cdn.jsdelivr.net/npm/tmi.js@latest"></script>
-    <style>
-        body { margin:0; padding:0; background:transparent; font-family:Arial,sans-serif; color:white; font-size:72px; font-weight:bold; display:flex; justify-content:center; align-items:center; height:100vh; }
-        #counter { background:transparent; }
-    </style>
+<meta charset="UTF-8">
+<title>W/L Counter</title>
+<style>
+    body {
+        margin:0; padding:0;
+        background:transparent;
+        font-family:Arial,sans-serif;
+        color:white;
+        font-size:72px;
+        font-weight:bold;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        height:100vh;
+    }
+    #counter {
+        background:transparent;
+    }
+</style>
 </head>
 <body>
-    <div id="counter">W/L-0-0</div>
+<div id="counter">W/L-0-0</div>
 
-    <script>
-        let wins = 0;
-        let losses = 0;
-        const counter = document.getElementById('counter');
+<script src="https://cdn.jsdelivr.net/npm/tmi.js@latest"></script>
+<script>
+    let wins = 0;
+    let losses = 0;
+    const counter = document.getElementById('counter');
 
-        const client = new tmi.Client({
-            options: { debug: false },
-            connection: { reconnect: true, secure: true },
-            identity: {
-                username: 'neosredthong',          // e.g. skraitbot (lowercase)
-                password: 'oauth:1svzbwjs35uw7ftpvwplg1pv2m1a81' // from twitchtokengenerator.com (add 'oauth:' prefix)
-            },
-            channels: ['skrait0']  // change to 'neokipz' for them
-        });
+    // ======= CONFIGURE YOUR TWITCH CHAT =======
+    const client = new tmi.Client({
+        options: { debug: true },
+        connection: { reconnect: true, secure: true },
+        identity: {
+            username: 'neosredthong',   // lowercase
+            password: 'oauth:rxileb0maw2v6m71y90upbl3p6ht77'    // include oauth: prefix
+        },
+        channels: ['skrait0']
+    });
 
-        client.connect();
+    client.connect();
 
-        client.on('message', (channel, tags, message, self) => {
-            if (self) return;
-            message = message.trim().toLowerCase();
+    client.on('message', (channel, tags, message, self) => {
+        if (self) return; // ignore bot messages
+        message = message.trim().toLowerCase();
 
-            if (!tags.badges?.broadcaster && !tags.badges?.moderator) return;
+        // Only broadcaster and mods can change counter
+        if (!tags.badges?.broadcaster && !tags.badges?.moderator) return;
 
-            if (message.startsWith('!w')) {
-                const arg = message.slice(2).trim();
-                wins = arg ? parseInt(arg, 10) || wins : wins + 1;
-                counter.innerText = `W/L-${wins}-${losses}`;
-            } else if (message.startsWith('!l')) {
-                const arg = message.slice(2).trim();
-                losses = arg ? parseInt(arg, 10) || losses : losses + 1;
-                counter.innerText = `W/L-${wins}-${losses}`;
-            }
-        });
-    </script>
+        if (message === '!w') {
+            wins++;
+        } else if (message === '!l') {
+            losses++;
+        }
+        counter.innerText = `W/L-${wins}-${losses}`;
+    });
+</script>
 </body>
 </html>
